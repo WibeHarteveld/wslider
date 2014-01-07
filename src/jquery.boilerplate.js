@@ -2,15 +2,15 @@
 
 		// private variables
 		var totalSlides = 0,
-				currentSlide = {},
-				nextSlide = {},
-				prevSlide = {};
+		    currentSlide = {},
+		    nextSlide = {},
+		    prevSlide = {};
 
 		// wSlider defaults
 		var pluginName = "wSlider",
-				defaults = {
-					slideInterval: 5000
-				};
+		    defaults = {
+		    	slideInterval: 5000
+		    };
 
 		var _privateMethod = function () {
 			console.log("Private method");
@@ -91,10 +91,10 @@
 		};
 
 		/*
-     * Plugin wrapper, preventing against multiple instantiations and
-     * allowing any public function to be called via the jQuery plugin,
-     * e.g. $(element).pluginName('functionName', arg1, arg2, ...)
-     */
+		 * Plugin wrapper, preventing against multiple instantiations and
+		 * allowing any public function to be called via the jQuery plugin,
+		 * e.g. $(element).pluginName('functionName', arg1, arg2, ...)
+		 */
 		$.fn[ pluginName ] = function ( arg ) {
 
 			var args, instance;
@@ -111,7 +111,7 @@
 			instance.element = this;
 
 			// Is the first parameter an object (arg), or was omitted,
-      // call Plugin.init( arg )
+			// call Plugin.init( arg )
 			if ( typeof arg === "undefined" || typeof arg === "object" ) {
 
 				if ( typeof instance.init === "function" ) {
