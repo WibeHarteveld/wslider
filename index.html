@@ -9,6 +9,7 @@
 		<link rel="stylesheet" href="style/main.css">
 		<!-- Place favicon.ico and apple-touch-icon(s) in the root directory -->
 		<!-- <link rel="stylesheet" href="css/main.css"> -->
+		<script src="src/modernizr.min.js"></script>
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
 		<!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script> -->
 		<script src="src/jquery.boilerplate.js"></script>
@@ -17,7 +18,7 @@
 
 		<style type="text/css">
 			/* slider container */
-			.wslider {
+			#wslider {
 				/* required */
 				position: relative;
 				top: 0;
@@ -28,39 +29,61 @@
 			}
 
 			/* slider */
-			.wslider .slider {
+			#wslider .slides {
 				/* required */
 				width: 100%;
 				height: 100%;
 			}
 
 			/* slide */
-			.wslider .slider .slide {
+			#wslider .slide {
 				/* required */
 				float: left;
 				width: 400px; /* slide width */
 				height: 200px; /* slide height */
 			}
 
-			.wslider .slider #slide1 {background: #E0E0E0;}
-			.wslider .slider #slide2 {background: #C0C0C0;}
-			.wslider .slider #slide3 {background: #A0A0A0;}
+			#wslider #slide1 {background: #E0E0E0;}
+			#wslider #slide2 {background: #C0C0C0;}
+			#wslider #slide3 {background: #A0A0A0;}
 		</style>
 
 		<script>
 		jQuery(document).ready(function($) {
-			$(".wslider").wSlider({
+
+			function callback(args) {
+				// Accessing user defined settings from initialization
+				var autoSlideToggleSelector = args.settings.autoSlideToggleSelector,
+				// Accessing data from the slider object
+				sliderMax = args.data.sliderMax,
+				// Additional calculated variables supplied to the 'args' object.
+				currentSlideNumber = args.currentSlideNumber;
+			}
+
+			// Include custom properties
+			$("#wslider").wSlider({
 				propertyName: "a custom value"
 			});
+
+			// // Include callback function
+			// $(".wslider").wSlider({
+			// 	onSliderLoaded: callback
+			// });
+
+			// Include callback function
+			// $(".wslider").wSlider("destroy");
+
+
+
 			// $(".wslider").wSlider();
 		});
 		</script>
 
 		<!-- slider container -->
-		<div class="wslider">
+		<div id="wslider">
 
 			<!-- slider -->
-			<div class="slider">
+			<div class="slides">
 
 				<!-- slides -->
 				<div id="slide1" class="slide">Slide 1</div>
