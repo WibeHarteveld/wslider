@@ -1,17 +1,18 @@
 ;(function ( $, window, document, undefined ) {
 
-	// private variables
 	var totalSlides = 0,
 	    currentSlide = {},
 	    nextSlide = {},
-	    prevSlide = {};
-
-	// wSlider defaults
-	var pluginName = "wSlider",
+	    prevSlide = {},
+	    pluginName = "wSlider",
+	    // the name of using in .data()
+	    dataPlugin = "plugin_" + pluginName,
+	    // default options
 	    defaults = {
 	    	slideInterval: 5000
 	    };
 
+	// Private methods
 	var _privateMethod = function () {
 		console.log("Private method");
 	},
@@ -20,7 +21,7 @@
 		console.log(this);
 	},
 
-	_getCurrentSlide = function () {
+	_getCurSlide = function () {
 		// some logic
 	},
 
@@ -41,26 +42,31 @@
 	};
 
 	// plugin constructor
-	function Plugin ( element, options ) {
+	var Plugin = function ( element ) {
+		/*
+		 * plugin instantiation
+		 */
 		this.element = element;
-		this.settings = $.extend( {}, defaults, options );
 		this._defaults = defaults;
 		this._name = pluginName;
-		this.init();
 	}
 
 	Plugin.prototype = {
 
-		init: function () {
-				// Place initialization logic here
-				// You already have access to the DOM element and
-				// the options via the instance, e.g. this.element
-				// and this.settings
-				// you can add more functions like the one below and
-				// call them like so: this.yourOtherFunction(this.element, this.settings).
-				console.log("xD");
+		init: function ( options ) {
+			// Place initialization logic here
+			// You already have access to the DOM element and
+			// the options via the instance, e.g. this.element
+			// and this.settings
+			// you can add more functions like the one below and
+			// call them like so: this.yourOtherFunction(this.element, this.settings).
 
-				// creating new DOM elements, registering listeners, etc
+			// Merge passes options with defaults
+			this.settings = $.extend( this._defaults, options );
+
+			console.log("xD");
+			console.log(this.settings);
+			// creating new DOM elements, registering listeners, etc
 		},
 
 		destroy: function () {
@@ -102,7 +108,6 @@
 
 		// only allow the plugin to be instantiated once
 		if ( !( this.data( dataPlugin ) instanceof Plugin ) ) {
-
 			// if no instance, create one
 			this.data( dataPlugin, new Plugin( this ) );
 		}
@@ -123,7 +128,7 @@
 		} else if ( typeof arg === "string" && typeof instance[arg] === "function" ) {
 
 			// copy arguments & remove function name
-			args =Array.prototype.slice.call( arguments, 1 );
+			args = Array.prototype.slice.call( arguments, 1 );
 
 			// Call the method
 			return instance[arg].apply( instance, args );
