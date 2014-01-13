@@ -2,12 +2,12 @@
 
 	/* global variables */
 	var totalSlides = 0,
-	    currentSlide = {},
-	    nextSlide = {},
-	    prevSlide = {},
-	    pluginName = "wSlider",
-	    // the name of using in .data()
-	    dataPlugin = "plugin_" + pluginName,
+	currentSlide = {},
+	nextSlide    = {},
+	prevSlide    = {},
+	pluginName   = "wSlider",
+	// the name of using in .data()
+	dataPlugin   = "plugin_" + pluginName,
 
 	/* default options */
 	defaults = {
@@ -72,16 +72,20 @@
 
 	},
 
-	_setSliderOffset = function (slidesGroup, slidesOffset) {
-		console.log("hallo");
-
-		slidesGroup.css({
-			"width": slidesOffset,
-			"webkitTransform": "matrix(1,0,0,1," + slidesOffset + ",0)",
-			"MozTransform": "matrix(1,0,0,1," + slidesOffset + ",0)",
-			"transform": "matrix(1,0,0,1," + slidesOffset + ",0)",
+	_setSliderOffset = function (node, offset) {
+		$(node).css({
+			"webkitTransform": "matrix(1,0,0,1," + offset + ",0)",
+			"MozTransform": "matrix(1,0,0,1," + offset + ",0)",
+			"transform": "matrix(1,0,0,1," + offset + ",0)",
 		});
-		// width: 3600px; -webkit-transform: matrix(1, 0, 0, 1, -4500, 0);
+	},
+
+	_goToNextSlide = function ( currentSlide ) {
+
+	},
+
+	_goToPrevSlide = function ( currentSlide ) {
+
 	},
 
 	_getTotalSlides = function () {
@@ -117,25 +121,86 @@
 			this.settings = $.extend( this._defaults, options );
 
 			/* Global variables */
-			var hasCSSAnimation = Modernizr.cssanimations,
-			slider = this.element,
-			slidesGroup = slider.find("div.slides");
-			slides = slider.find("div.slide"),
-			slidesOffset = slides.length * slider.width(),
+			var slider            = this.element,
+			slidesContainer       = slider.find("div.slides");
+			allSlides             = slider.find("div.slide"),
+			sliderWidth           = slider.width();
+			slidesContainerWidth  = allSlides.length * sliderWidth,
+			slideOffset           = 0,
+			hasCSSAnimation       = Modernizr.cssanimations,
+			scroller = {},
 
 			anchorEvents = slider.find("a");
 
-			console.log(hasCSSAnimation);
+			console.log(slider);
 
-			// Use css3 animation if browser supports it
-			if (hasAnimation) {
+			// initial arrangement of slides
+			// set .slides container initial offset and css
+			slidesContainer.css({
+				"width": slidesContainerWidth,
+				"webkitTransition": "all 1s"
+			});
 
-				// arrange slides behind each other by using CSS3 animation
-				_setSliderOffset(slidesGroup, slidesOffset);
-			} else {
-				// jquery animation fallback will be used instead
-			}
+			_setSliderOffset( slidesContainer, 0 );
 
+			// set each initial slide offset and css
+			allSlides.each( function( index, node ) {
+
+				_setSliderOffset( node, slideOffset);
+
+				slideOffset += sliderWidth;
+			}).css({
+				"position": "absolute",
+				"cursor": "-webkit-grab"
+			});
+
+			// Add mouse handlers for horizontal scrolling through slides
+			allSlides.on( "mousedown", function ( evMouseDown ) {
+				var mousePositionStartX = evMouseDown.pageX,
+				mouseDistanceX = 0,
+				mousePositionCurX = 0;
+
+				// Remove css transition
+				slidesContainer.css( "webkitTransition", "" );
+
+				$(document).on( "mousemove.namespace1", function( evMouseMove ) {
+					// Scroll slides
+					mouseDistanceX = evMouseMove.pageX - mousePositionStartX;
+
+					// Set sliderOffset of slidescontainer to dragged distance
+					_setSliderOffset( slidesContainer, mouseDistanceX );
+
+				});
+				$(document).on( "mouseup.namespace1", function () {
+
+					// Add CSS transition
+					slidesContainer.css( "webkitTransition", "all 1s" );
+
+					// Scroll to next, previous or current slide
+					// if scroll is over half of current slide go to next slide or
+					// previous slide
+					if ( Math.abs(mouseDistanceX) > (sliderWidth / 2) ) {
+
+						// If mouseDistanceX is negative, goto previous slide
+						if ( mouseDistanceX < 0 ) {
+							console.log("_goPrevSlide");
+
+						// else go to next slide
+						} else {
+							_getCurSlide();
+							console.log("_goNextSlide()");
+						}
+
+					// Go back to current slide
+					} else {
+						console.log("nop, not more than half");
+						_setSliderOffset( slidesContainer, 0 );
+					}
+
+					// Unbind mouse handlers
+					$(this).unbind( ".namespace1" );
+				});
+			});
 
 			// Place initialization logic here
 			// You already have access to the DOM element and
