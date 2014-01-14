@@ -1,13 +1,9 @@
 ;(function ( $, window, document, undefined ) {
 
 	/* global variables */
-	var totalSlides = 0,
-	currentSlide = {},
-	nextSlide    = {},
-	prevSlide    = {},
-	pluginName   = "wSlider",
+	var pluginName = "wSlider",
 	// the name of using in .data()
-	dataPlugin   = "plugin_" + pluginName,
+	dataPlugin = "plugin_" + pluginName,
 
 	/* default options */
 	defaults = {
@@ -68,11 +64,62 @@
 	},
 
 	/* Private methods */
-	_getSliderOffset = function (hasCSSAnimation) {
+	_getSliderOffset = function ( hasCSSAnimation ) {
 
 	},
 
-	_setSliderOffset = function (node, offset) {
+	_nextSlide = function () {
+		objSlider.callback.curSlide += 1;
+		_setSlideOffset();
+		// _setSlideOffset(curSlide)
+	},
+
+	// Slides to next slide
+	_setSlideOffset = function ( slidePos ) {
+		var offset = 0;
+
+		// If no slidePos is passed through function, use curSlide value instead.
+		slidePos = (typeof slidePos === "undefined") ? objSlider.callback.curSlide : slidePos;
+		console.log(objSlider.callback.curSlide);
+
+		// If the current slide is the first one, rearrange last slide before first slide.
+		if ( slidePos <= 1 ) {
+
+			// Iterate over each slide and use a different offset
+			// for last slide
+			objAllSlides.each( function ( index ) {
+				// set offset of last slide before first slide
+				if ( index === numAllSlides-1 ) {
+					offset = -slideOffset;
+				}
+				_setTransformOffset( offset, this );
+
+				$(this).css({
+					"position": "absolute",
+					"cursor": "-webkit-grab"
+				});
+
+				offset += sliderWidth;
+			});
+
+			// set slides container offset
+			_setTransformOffset( 0, slidesContainer );
+
+		// If current slide is the last slide, rearrange first slide to the end.
+		} else if ( slidePos === numAllSlides ) {
+			_setTransformOffset( slideOffsetLast, objAllSlides[0] );
+
+		// Else do normal
+		} else {
+
+			nextSlideOffset = ( -( objSlider.callback.curSlide -1 ) * slideOffset );
+			_setTransformOffset( nextSlideOffset, slidesContainer );
+
+		}
+
+	},
+
+	_setTransformOffset = function ( offset, node ) {
 		$(node).css({
 			"webkitTransform": "matrix(1,0,0,1," + offset + ",0)",
 			"MozTransform": "matrix(1,0,0,1," + offset + ",0)",
@@ -80,28 +127,16 @@
 		});
 	},
 
-	_goToNextSlide = function ( currentSlide ) {
+	// Slides to the next slide.
 
+	// Slides to the previous slide.
+	prevSlide = function () {
+		// ...
 	},
 
-	_goToPrevSlide = function ( currentSlide ) {
-
-	},
-
-	_getTotalSlides = function () {
-		console.log("Total slides");
-	},
-
-	_getCurSlide = function () {
-		// some logic
-	},
-
-	_getNextSlide = function () {
-		// some logic
-	},
-
-	_getPrevSlide = function () {
-		// some logic
+	// Moves to the selected slide.
+	goToSlide = function ( slideNum ) {
+		// ...
 	},
 
 	// plugin constructor
@@ -121,80 +156,95 @@
 			this.settings = $.extend( this._defaults, options );
 
 			/* Global variables */
-			var slider            = this.element,
-			slidesContainer       = slider.find("div.slides");
-			allSlides             = slider.find("div.slide"),
-			sliderWidth           = slider.width();
-			slidesContainerWidth  = allSlides.length * sliderWidth,
-			slideOffset           = 0,
-			hasCSSAnimation       = Modernizr.cssanimations,
-			scroller = {},
+			var $document        = $(document);
+			objSlider            = this,
+			slider               = this.element,
+			slidesContainer      = slider.find("div.slides");
+			objAllSlides         = slider.find("div.slide"),
+			numAllSlides         = objAllSlides.length,
+			sliderWidth          = slider.width();
+			slidesContainerWidth = numAllSlides * sliderWidth,
+			slideOffset          = sliderWidth,
+			slideOffsetLast      = slideOffset * numAllSlides,
+			hasCSSAnimation      = Modernizr.cssanimations,
+			anchorEvents         = slider.find("a");
 
-			anchorEvents = slider.find("a");
+			this.callback = {
+				"curSlide": this.settings.startAtSlide
+			};
 
-			console.log(slider);
 
-			// initial arrangement of slides
-			// set .slides container initial offset and css
+			console.log($(slider).data());
+
+			// // If current slide is at the beginning of slides, rearrange 4th slide
+			// // to the beginning.
+			// if ( curSlide <== 1 ) {
+			// 	_setSliderOffset( objAllSlides[ numAllSlides-1 ], 0 );
+
+			// // If current slide is at the end of slides, rearrange 1st slide
+			// // to the end.
+			// } else if ( curSlide === numAllSlides ) {
+			// 	_setSliderOffset( objAllSlides[0], slideOffsetLast );
+			// }
+
+			// Set initial slides container css
 			slidesContainer.css({
 				"width": slidesContainerWidth,
 				"webkitTransition": "all 1s"
 			});
 
-			_setSliderOffset( slidesContainer, 0 );
+			_setSlideOffset();
 
-			// set each initial slide offset and css
-			allSlides.each( function( index, node ) {
+			// // Set initial slides container offset
+			// _setSliderOffset( slidesContainer, 0 );
 
-				_setSliderOffset( node, slideOffset);
+			// // set each initial slide offset and css
+			// objAllSlides.each( function( index, node ) {
 
-				slideOffset += sliderWidth;
-			}).css({
-				"position": "absolute",
-				"cursor": "-webkit-grab"
-			});
+			// 	_setSliderOffset( node, slideOffset);
 
 			// Add mouse handlers for horizontal scrolling through slides
-			allSlides.on( "mousedown", function ( evMouseDown ) {
+			objAllSlides.on( "mousedown", function ( evMouseDown ) {
 				var mousePositionStartX = evMouseDown.pageX,
-				mouseDistanceX = 0,
+				mouseDistanceX    = 0,
 				mousePositionCurX = 0;
 
 				// Remove css transition
-				slidesContainer.css( "webkitTransition", "" );
+				slidesContainer.css( "transition", "" );
 
-				$(document).on( "mousemove.namespace1", function( evMouseMove ) {
+				$document.on( "mousemove.namespace1", function( evMouseMove ) {
 					// Scroll slides
 					mouseDistanceX = evMouseMove.pageX - mousePositionStartX;
 
 					// Set sliderOffset of slidescontainer to dragged distance
-					_setSliderOffset( slidesContainer, mouseDistanceX );
+					_setTransformOffset( mouseDistanceX, slidesContainer );
 
 				});
-				$(document).on( "mouseup.namespace1", function () {
+				$document.on( "mouseup.namespace1", function () {
 
 					// Add CSS transition
 					slidesContainer.css( "webkitTransition", "all 1s" );
-
+					console.log(mouseDistanceX);
 					// Scroll to next, previous or current slide
 					// if scroll is over half of current slide go to next slide or
 					// previous slide
 					if ( Math.abs(mouseDistanceX) > (sliderWidth / 2) ) {
 
-						// If mouseDistanceX is negative, goto previous slide
+						// If mouseDistanceX is negative, goto next slide
 						if ( mouseDistanceX < 0 ) {
-							console.log("_goPrevSlide");
+							console.log("_nextSlide()");
+							_nextSlide();
 
-						// else go to next slide
+						// If positive go to prev slide
 						} else {
-							_getCurSlide();
-							console.log("_goNextSlide()");
+							console.log("_goPrevSlide()");
+
 						}
 
 					// Go back to current slide
 					} else {
 						console.log("nop, not more than half");
-						_setSliderOffset( slidesContainer, 0 );
+						_setTransformOffset( 0, slidesContainer );
 					}
 
 					// Unbind mouse handlers
@@ -210,7 +260,6 @@
 			// call them like so: this.yourOtherFunction(this.element, this.settings).
 
 			// creating new DOM elements, registering listeners, etc
-
 
 		},
 
@@ -229,7 +278,7 @@
 
 		// Slides to the next slide.
 		nextSlide: function () {
-			// ...
+
 		},
 
 		// Slides to the previous slide.
@@ -285,6 +334,7 @@
 				$(this).css( "background", color );
 			});
 		}
+
 	};
 
 	/*
@@ -304,8 +354,6 @@
 		}
 
 		instance = this.data( dataPlugin );
-
-		instance.element = this;
 
 		// Is the first parameter an object (arg), or was omitted,
 		// call Plugin.init( arg )
