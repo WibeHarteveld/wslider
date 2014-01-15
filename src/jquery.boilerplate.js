@@ -64,34 +64,100 @@
 	},
 
 	/* Private methods */
-	_getSliderOffset = function ( hasCSSAnimation ) {
+	getCurSlidePos = function () {
 
 	},
 
-	_nextSlide = function () {
-		objSlider.callback.curSlide += 1;
-		_setSlideOffset();
-		// _setSlideOffset(curSlide)
+	_setCurSlideOffset = function ( args ) {
+		args.curSlideOffset = ( args.curSlide - 1 ) * args.slideOffset;
 	},
 
-	// Slides to next slide
-	_setSlideOffset = function ( slidePos ) {
+	_getSlideOffset = function ( slide, slideOffset ) {
+		return -( ( slide -1 ) * slideOffset );
+	},
+
+	_isFirstSlide = function ( slide ) {
+		if ( slide === 1 ) {
+			return true;
+		}
+	},
+
+	_isLastSlide = function ( slide, numAllSlides ) {
+		if ( slide === numAllSlides ) {
+			return true;
+		}
+	},
+
+	_initNextSlide = function ( option, args ) {
+		// Increment nextSlide number if +
+		if ( option === "+") {
+			args.nextSlide = args.curSlide + 1;
+
+		// Decrement nextSlide number if -
+		} else if ( option === "-") {
+			args.nextSlide = args.curSlide - 1;
+
+		// Next slide number becomes passed through argument, if nextSlide is a number
+		// and below or same as last slide number.
+		} else if ( IsNumeric( option ) && option <= lastSlide ) {
+			args.nextSlide = option;
+
+		} else {
+			exit;
+		}
+
+		// Update current slide offset
+		_setCurSlideOffset( args );
+	},
+
+	// Slides to the next slide.
+	_slideRight = function ( args ) {
+		// If current slide is the last slide, go back to the first slide
+		if ( _isLastSlide( args.curSlide, args.numAllSlides ) ) {
+			_initNextSlide( 1, args );
+
+		} else {
+			// Set nextSlide to incremented slide number
+			_initNextSlide( "+", args );
+		}
+
+		// Set slideOffset based on next slide number
+		_setSlideOffset( args );
+	},
+
+	// Slides to the previous slide.
+	_slideLeft = function ( args ) {
+		// If current slide is the first slide, go to the last slide
+		if ( _isFirstSlide( args.curSlide ) ) {
+			_initNextSlide( args.lastSlide, args );
+
+		} else {
+			// Set nextSlide to incremented slide number
+			_initNextSlide( "-");
+		}
+
+		// Set slideOffset based on next slide number
+		_setSlideOffset( args );
+	},
+
+	// Moves to the selected slide.
+	goToSlide = function ( slidePos ) {
+		// ...
+	},
+
+	_setSlideOffset = function ( args ) {
 		var offset = 0;
 
-		// If no slidePos is passed through function, use curSlide value instead.
-		slidePos = (typeof slidePos === "undefined") ? objSlider.callback.curSlide : slidePos;
-		console.log(objSlider.callback.curSlide);
+		// If the current slidePos is the first slide, rearrange last slide before first slide.
+		if ( _isFirstSlide( args.curSlide ) ) {
 
-		// If the current slide is the first one, rearrange last slide before first slide.
-		if ( slidePos <= 1 ) {
-
-			// Iterate over each slide and use a different offset
-			// for last slide
-			objAllSlides.each( function ( index ) {
+			// Iterate over each slide and use a different offset for last slide.
+			args.objAllSlides.each( function ( index ) {
 				// set offset of last slide before first slide
-				if ( index === numAllSlides-1 ) {
-					offset = -slideOffset;
+				if ( index === args.lastSlide - 1 ) {
+					offset = -args.slideOffset;
 				}
+
 				_setTransformOffset( offset, this );
 
 				$(this).css({
@@ -99,24 +165,31 @@
 					"cursor": "-webkit-grab"
 				});
 
-				offset += sliderWidth;
+				offset += args.slideOffset;
 			});
 
-			// set slides container offset
-			_setTransformOffset( 0, slidesContainer );
+			// Set slides container offset to first slide
+			_setTransformOffset( 0, args.slidesContainer );
+
+		// If current slide is the second last slide, rearrange last slide to end
+		// if last slide is still before first slide.
+		} else if ( args.curSlide === args.lastSlide - 1 ) {
+			_setTransformOffset( args.slideOffset * (args.lastSlide - 1), args.objAllSlides[ args.lastSlide ] );
 
 		// If current slide is the last slide, rearrange first slide to the end.
-		} else if ( slidePos === numAllSlides ) {
-			_setTransformOffset( slideOffsetLast, objAllSlides[0] );
+		} else if ( _isLastSlide( args.curSlide, args.numAllSlides ) ) {
+			_setTransformOffset( args.slideOffsetLast, args.objAllSlides[0] );
 
-		// Else do normal
+			// Set slides container offset to last slide
+			_setTransformOffset( ( args.slideOffsetLast - args.slideOffset ), args.slidesContainer );
+
 		} else {
-
-			nextSlideOffset = ( -( objSlider.callback.curSlide -1 ) * slideOffset );
-			_setTransformOffset( nextSlideOffset, slidesContainer );
+			// Else only change offset of slide container, no rearranging
+			// of slide positions occur.
+			newSlideOffset = ( -( slidePos - 1 ) * slideOffset );
+			_setTransformOffset( newSlideOffset, slidesContainer );
 
 		}
-
 	},
 
 	_setTransformOffset = function ( offset, node ) {
@@ -125,18 +198,6 @@
 			"MozTransform": "matrix(1,0,0,1," + offset + ",0)",
 			"transform": "matrix(1,0,0,1," + offset + ",0)",
 		});
-	},
-
-	// Slides to the next slide.
-
-	// Slides to the previous slide.
-	prevSlide = function () {
-		// ...
-	},
-
-	// Moves to the selected slide.
-	goToSlide = function ( slideNum ) {
-		// ...
 	},
 
 	// plugin constructor
@@ -156,25 +217,48 @@
 			this.settings = $.extend( this._defaults, options );
 
 			/* Global variables */
-			var $document        = $(document);
-			objSlider            = this,
-			slider               = this.element,
-			slidesContainer      = slider.find("div.slides");
-			objAllSlides         = slider.find("div.slide"),
-			numAllSlides         = objAllSlides.length,
-			sliderWidth          = slider.width();
-			slidesContainerWidth = numAllSlides * sliderWidth,
-			slideOffset          = sliderWidth,
-			slideOffsetLast      = slideOffset * numAllSlides,
-			hasCSSAnimation      = Modernizr.cssanimations,
-			anchorEvents         = slider.find("a");
+			var $document        = $(document),
+			objSlider            = this;
+			// slider               = this.element,
+			// slidesContainer      = slider.find("div.slides"),
+			// objAllSlides         = slider.find("div.slide"),
+			// numAllSlides         = objAllSlides.length,
+			// sliderWidth          = slider.width(),
+			// slidesContainerWidth = numAllSlides * sliderWidth,
+			// slideOffset          = sliderWidth,
+			// slideOffsetLast      = slideOffset * numAllSlides,
+			// hasCSSAnimation      = Modernizr.cssanimations,
+			// anchorEvents         = slider.find("a");
+			console.log(this);
+			console.log(this.element);
 
-			this.callback = {
-				"curSlide": this.settings.startAtSlide
+			this.args = {
+				"objSlider": Plugin.prototype.element,
+				"slider": this.objSlider.element,
+				"slidesContainer": this.slider.find("div.slides"),
+				"objAllSlides": this.slider.find("div.slide"),
+				"numAllSlides": this.objAllSlides.length,
+				"sliderWidth": this.slider.width(),
+				"slidesContainerWidth": this.numAllSlides * this.sliderWidth,
+				"slideOffset": this.sliderWidth,
+				"slideOffsetLast": this.slideOffset * this.numAllSlides,
+				"hasCSSAnimation": Modernizr.cssanimations,
+				"anchorEvents": this.slider.find("a"),
+				"curSlide": this.objSlider.settings.startAtSlide,
+				"nextSlide": 0,
+				"lastSlide": this.numAllSlides,
+				"curSlideOffset": _getSlideOffset( this.settings.startAtSlide, this.slideOffset )
 			};
 
+			// Check for genuine startAtSlide value. If not genuine, set to default value.
+			// 0 is not allowed for startSlide
+			if ( this.settings.startAtSlide === 0 ) {
+				this.settings.startAtSlide = this.defaults.startAtSlide;
 
-			console.log($(slider).data());
+			// Higher value than last slide is not allowed
+			} else if ( this.settings.startAtSlide > numAllSlides ) {
+				this.settings.startAtSlide = this.defaults.startAtSlide;
+			}
 
 			// // If current slide is at the beginning of slides, rearrange 4th slide
 			// // to the beginning.
@@ -193,7 +277,7 @@
 				"webkitTransition": "all 1s"
 			});
 
-			_setSlideOffset();
+			this._setSlideOffset( this.args );
 
 			// // Set initial slides container offset
 			// _setSliderOffset( slidesContainer, 0 );
@@ -216,29 +300,34 @@
 					// Scroll slides
 					mouseDistanceX = evMouseMove.pageX - mousePositionStartX;
 
+					// Take current slide offset as base of mouse movement
+					mouseDistanceXCurSlide = -objSlider.callback.curSlideOffset + mouseDistanceX;
+
 					// Set sliderOffset of slidescontainer to dragged distance
-					_setTransformOffset( mouseDistanceX, slidesContainer );
+					_setTransformOffset( mouseDistanceXCurSlide, slidesContainer );
 
 				});
 				$document.on( "mouseup.namespace1", function () {
 
 					// Add CSS transition
 					slidesContainer.css( "webkitTransition", "all 1s" );
-					console.log(mouseDistanceX);
-					// Scroll to next, previous or current slide
-					// if scroll is over half of current slide go to next slide or
+
+					// Scroll to next, previous or current slide.
+					// If scroll is over half of current slide go to next slide or
 					// previous slide
 					if ( Math.abs(mouseDistanceX) > (sliderWidth / 2) ) {
 
 						// If mouseDistanceX is negative, goto next slide
 						if ( mouseDistanceX < 0 ) {
-							console.log("_nextSlide()");
-							_nextSlide();
+							_slideRight( args.curSlide );
+							console.log("Current slide: " + objSlider.callback.curSlide);
+							console.log("Current slide Offset: " + objSlider.callback.curSlideOffset);
+							console.log("nextSlide: " + objSlider.callback.nextSlide);
+							console.log("lastSlide: " + objSlider.callback.lastSlide);
 
-						// If positive go to prev slide
+						// If mouseDistanceX is positive go to prev slide
 						} else {
-							console.log("_goPrevSlide()");
-
+							console.log("_slideLeft()");
 						}
 
 					// Go back to current slide
