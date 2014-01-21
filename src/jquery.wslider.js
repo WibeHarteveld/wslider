@@ -126,12 +126,11 @@
 		});
 	},
 
-	_initSlideOffset = function ( slidePos, allSlides, slidesContainer, numAllSlides, slideOffset ) {
-		var beforeFirstSlideOffset = 0,
+	_initSlideOffset = function ( slidePos, prevSlidePos, allSlides, slidesContainer, numAllSlides, slideOffset ) {
+		var beforeFirstSlideOffset = _getSlideOffset( 0, slideOffset ),
 		afterLastSlideOffset       = _getSlideOffset( (numAllSlides + 1), slideOffset ),
 		slideOffsetLast            = _getSlideOffset( numAllSlides, slideOffset ),
 		slidesContainerOffset      = -(_getSlideOffset( slidePos, slideOffset ));
-
 
 		// if ( slidePos === 0 ) {
 		// 	// Position the last slide (who is positioned before first) back to the end of the slides
@@ -146,19 +145,55 @@
 		// 	slidesContainerOffset = -(_getSlideOffset( numAllSlides, slideOffset ));
 		// 	_setTransformOffset( slidesContainerOffset, slidesContainer );
 
-		// If the current slidePos is the first slide, rearrange last slide before first slide.
-		// Rearrange first slide if it is positioned at the end of the slides.
+		// If the current slidePos is the first slide,
+		console.log("prev = " + (prevSlidePos));
+
+		// Check if the slide is the first of slides
 		if ( _isFirstSlide( slidePos ) ) {
-			_setTransformOffset( 0, allSlides[0] );
+			console.log("Slide1");
+				// console.log("prevSlidePos: " + prevSlidePos);
 
-			beforeFirstSlideOffset = _getSlideOffset( (slidePos - 1), slideOffset ),
-			_setTransformOffset( beforeFirstSlideOffset, allSlides[ numAllSlides - 1 ] );
+			// Check if previous slide was the last slide (slider loops back to the beginning of the slides)
+			if ( prevSlidePos === numAllSlides ) {
+				console.log("slider loops back to the beginning of the slides");
 
-			// Set slides container offset to first slide
-			_setTransformOffset( slidesContainerOffset, slidesContainer );
+				// Set slides container offset to afterLastSlide position (slide 1)
+				_setTransformOffset( -afterLastSlideOffset, slidesContainer );
+
+				// Check if Slides container CSS3 transition has ended
+				slidesContainer.on("webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend",
+					function(e) {
+						console.log("To the beginning");
+						// Remove slides container CSS3 Transition
+						slidesContainer.css( "transition", "" );
+
+						// rearrange first slide from the back to the beginning of the slides.
+						_setTransformOffset( 0, allSlides[0] );
+
+						// rearrange last slide before first slide (beforeFirstSlide position).
+						_setTransformOffset( beforeFirstSlideOffset, allSlides[ numAllSlides - 1 ] );
+
+						// Set slides container offset to first slide
+						_setTransformOffset( slidesContainerOffset, slidesContainer );
+
+						// Unbind CSS3 transition check handler
+						slidesContainer.off();
+					}
+				);
+
+			// If no looping occurse
+			} else {
+				// rearrange last slide before first slide (beforeFirstSlide position).
+				_setTransformOffset( beforeFirstSlideOffset, allSlides[ numAllSlides - 1 ] );
+
+				// Set slides container offset to first slide
+				_setTransformOffset( slidesContainerOffset, slidesContainer );
+			}
+
 
 		// If slide is the second slide and first slide is positioned last, position first slide back
 		} else if ( slidePos === 2 ) {
+			console.log("Slide2");
 			_setTransformOffset( 0, allSlides[0] );
 
 			// Set slides container offset
@@ -168,21 +203,54 @@
 		// last slide is still before the first slide.
 		// TODO check eff
 		} else if ( slidePos === numAllSlides - 1 ) {
-			// Rearange last slide
+			console.log("Slide3");
+			// Rearange last slide back to last position in slides
 			_setTransformOffset( slideOffsetLast, allSlides[ numAllSlides - 1 ] );
 
 			// Set slides container offset
 			_setTransformOffset( slidesContainerOffset, slidesContainer );
 
-		// If slide is the last slide, rearrange first slide to the end.
+		// If slide is last slide, rearrange first slide to the end.
 		} else if ( _isLastSlide( slidePos, numAllSlides ) ) {
-			console.log("Last slide");
-			_setTransformOffset( slideOffsetLast, allSlides[ numAllSlides - 1 ] );
-			_setTransformOffset( afterLastSlideOffset, allSlides[0] );
-			// Set slides container offset to last slide
-			_setTransformOffset( slidesContainerOffset, slidesContainer );
+			console.log("Slide4");
+			// Check if previous slide was the first slide (slider loops forth to the back of the slides)
+			// console.log(prevSlidePos);
+			if ( prevSlidePos === 1 ) {
+				console.log("slider loops forth to the back of the slides");
+				// Set slides container offset to beforeFirstSlide position (slide 4)
+				_setTransformOffset( -beforeFirstSlideOffset, slidesContainer );
+
+				// Check if Slides container CSS3 transition has ended
+				slidesContainer.on("webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend",
+					function() {
+						console.log("To the back");
+						// Remove slides container CSS3 Transition
+						slidesContainer.css( "transition", "" );
+
+						// Rearange last slide back to last position in slides
+						_setTransformOffset( slideOffsetLast, allSlides[ numAllSlides - 1 ] );
+
+						// Rearange first slide after the last slide (afterLastSlide position)
+						_setTransformOffset( afterLastSlideOffset, allSlides[0] );
+
+						// Set slides container offset to last slide
+						_setTransformOffset( slidesContainerOffset, slidesContainer );
+
+						// Unbind CSS3 transition check handler
+						slidesContainer.off();
+					}
+				);
+			// If no looping occurse
+			} else {
+				// Rearange first slide after the last slide (afterLastSlide position)
+				_setTransformOffset( afterLastSlideOffset, allSlides[0] );
+
+				// Set slides container offset to last slide
+				_setTransformOffset( slidesContainerOffset, slidesContainer );
+			}
 
 		} else {
+			console.log("Between");
 			// Else only change offset of slide container, no rearranging
 			// of slide positions occur.
 			_setTransformOffset( slidesContainerOffset, slidesContainer );
@@ -262,14 +330,14 @@
 			// }
 
 			// Set CSS3 transition on the slides container
-			// this.slidesContainer.css({
-			// 	"width": this.slidesContainerWidth,
-			// 	"webkitTransition": "all 1s"
-			// });
+			this.slidesContainer.css({
+				"width": this.slidesContainerWidth,
+				"webkitTransition": "all 1s"
+			});
 
 			_initAllSlidesOffset( this.allSlides, this.numAllSlides, this.slideOffset );
 
-			_initSlideOffset( this.curSlidePos, this.allSlides, this.slidesContainer, this.numAllSlides, this.slideOffset );
+			_initSlideOffset( this.curSlidePos, this.prevSlidePos, this.allSlides, this.slidesContainer, this.numAllSlides, this.slideOffset );
 
 			// // Set initial slides container offset
 			// _setSliderOffset( slidesContainer, 0 );
@@ -286,7 +354,7 @@
 				mousePositionCurX       = 0,
 				mouseDistancePerc       = 0;
 
-				// Remove css transition
+				// Remove CSS3 transition
 				that.slidesContainer.css( "transition", "" );
 
 				$document.on( "mousemove.namespace1", function( evMouseMove ) {
@@ -303,7 +371,7 @@
 				$document.on( "mouseup.namespace1", function () {
 
 					// Add CSS transition
-					// that.slidesContainer.css( "webkitTransition", "all 1s" );
+					that.slidesContainer.css( "webkitTransition", "all 1s" );
 
 					// Scroll to next, previous or current slide.
 					// If scroll is the same or more that given mouseSlidePercentage go to next slide or
@@ -326,6 +394,7 @@
 						_setTransformOffset( that.slideContainerOffset, that.slidesContainer );
 					}
 
+					console.log("==========================");
 					console.log("Current slide pos: " + that.curSlidePos);
 					console.log("Current slide Offset: " + that.curSlideOffset);
 					console.log("Next slide pos: " + that.nextSlidePos);
@@ -333,7 +402,7 @@
 					console.log("Current Container Offset: " + that.slideContainerOffset);
 
 					// Unbind mouse handlers
-					$(this).unbind( ".namespace1" );
+					$(this).off( ".namespace1" );
 				});
 			});
 
@@ -372,11 +441,11 @@
 				this.nextSlidePos = this.curSlidePos + 1;
 			}
 
-			// Set slideOffset based on next slide number
-			_initSlideOffset( this.nextSlidePos, this.allSlides, this.slidesContainer, this.numAllSlides, this.slideOffset );
-
 			// Update previous slide position
 			this.prevSlidePos = this.curSlidePos;
+
+			// Set slideOffset based on next slide number
+			_initSlideOffset( this.nextSlidePos, this.prevSlidePos, this.allSlides, this.slidesContainer, this.numAllSlides, this.slideOffset );
 
 			// Update cur slide position
 			this.curSlidePos = this.nextSlidePos;
@@ -400,11 +469,11 @@
 				this.nextSlidePos = this.curSlidePos - 1;
 			}
 
-			// Set slideOffset based on next slide number
-			_initSlideOffset( this.nextSlidePos, this.allSlides, this.slidesContainer, this.numAllSlides, this.slideOffset );
-
 			// Update previous slide position
 			this.prevSlidePos = this.curSlidePos;
+
+			// Set slideOffset based on next slide number
+			_initSlideOffset( this.nextSlidePos, this.prevSlidePos, this.allSlides, this.slidesContainer, this.numAllSlides, this.slideOffset );
 
 			// Update cur slide position
 			this.curSlidePos = this.nextSlidePos;
