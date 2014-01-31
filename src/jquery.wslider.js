@@ -117,6 +117,43 @@
 		});
 	},
 
+	_setTransformOffsetLastToFirst = function ( allSlides, numAllSlides, beforeFirstSlideOffset, slidesContainerOffset, slidesContainer ) {
+		console.log("To the beginning");
+		// Remove slides container CSS3 Transition
+		slidesContainer.css( "transition", "" );
+
+		// rearrange first slide from the back to the beginning of the slides.
+		_setTransformOffset( 0, $(allSlides[0]) );
+
+		// rearrange last slide before first slide (beforeFirstSlide position).
+		_setTransformOffset( beforeFirstSlideOffset, $(allSlides[ numAllSlides - 1 ]) );
+
+		// Set slides container offset to first slide
+		_setTransformOffset( slidesContainerOffset, slidesContainer );
+
+		// Reset DelayForTransition
+		slidesContainer.data( "delayForTransitionLastToFirst", "" );
+
+	},
+
+	_setTransformOffsetFirstToLast = function ( allSlides, numAllSlides, afterLastSlideOffset, slidesContainerOffset, slidesContainer, slideOffsetLast ) {
+		console.log("To the end");
+		// Remove slides container CSS3 Transition
+		slidesContainer.css( "transition", "" );
+
+		// Rearange last slide back to last position in slides
+		_setTransformOffset( slideOffsetLast, $(allSlides[ numAllSlides - 1 ]) );
+
+		// Rearange first slide after the last slide (afterLastSlide position)
+		_setTransformOffset( afterLastSlideOffset, $(allSlides[0]) );
+
+		// Set slides container offset to last slide
+		_setTransformOffset( slidesContainerOffset, slidesContainer );
+
+		// Reset DelayForTransition
+		slidesContainer.data( "delayForTransitionFirstToLast", "" );
+	},
+
 	_initAllSlidesOffset = function ( allSlides, numAllSlides, slideOffset ) {
 		var offset = 0;
 
@@ -135,11 +172,16 @@
 		});
 	},
 
-	_initSlideOffset = function ( slidePos, prevSlidePos, allSlides, slidesContainer, numAllSlides, slideOffset ) {
-		var beforeFirstSlideOffset = _getSlideOffset( 0, slideOffset ),
-		afterLastSlideOffset       = _getSlideOffset( (numAllSlides + 1), slideOffset ),
-		slideOffsetLast            = _getSlideOffset( numAllSlides, slideOffset ),
-		slidesContainerOffset      = -(_getSlideOffset( slidePos, slideOffset ));
+	_initSlideOffset = function ( slidePos, prevSlidePos, allSlides, slidesContainer, numAllSlides, slideOffset, beforeFirstSlideOffset, afterLastSlideOffset, slideOffsetLast ) {
+		var slidesContainerOffset = -(_getSlideOffset( slidePos, slideOffset ));
+
+		// Set SlidesContainerOffset in data for use event function (when transition ends)
+		slidesContainer.data( "slidesContainerOffset", slidesContainerOffset );
+
+		// var beforeFirstSlideOffset = _getSlideOffset( 0, slideOffset ),
+		// afterLastSlideOffset       = _getSlideOffset( (numAllSlides + 1), slideOffset ),
+		// slideOffsetLast            = _getSlideOffset( numAllSlides, slideOffset ),
+		// slidesContainerOffset      = -(_getSlideOffset( slidePos, slideOffset ));
 
 		// If MouseUp event occures before CSS3 transition end (e.g. fast scrolling), set transform offsets immediately.
 		// If MouseUp event occures before CSS3 transition end (e.g. fast scrolling)
@@ -155,25 +197,22 @@
 			console.log("slide 1");
 
 			// If previous slide was the last slide, slider loops back to the beginning of the slides.
+			// This occurs only when sliding to the right.
 			if ( prevSlidePos === numAllSlides ) {
 				console.log("slider loops back to the beginning of the slides");
 
 				// Set slides container offset to afterLastSlide position (slide 1)
 				_setTransformOffset( -afterLastSlideOffset, slidesContainer );
+				// Set delayForTransition to execute when transition is ended
+				slidesContainer.data( "delayForTransitionLastToFirst", true);
 
 				// If mouseup event occures before CSS3 transition end (e.g. fast scrolling),
 				// set transform offsets immediately.
 				if ( slidesContainer.data("transitionStatus") === "active" ) {
-
-				} else {
-
+					console.log("Mouse used in transition");
+					_setTransformOffsetLastToFirst( allSlides, numAllSlides, beforeFirstSlideOffset, slidesContainerOffset, slidesContainer );
+					slidesContainer.data( "delayForTransitionLastToFirst", false);
 				}
-
-
-
-				console.log(slidesContainer.data( "slideDirect"));
-
-
 
 				// Check if Slides container CSS3 transition has ended
 				// slidesContainer.on("webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend",
@@ -232,13 +271,23 @@
 		} else if ( _isLastSlide( slidePos, numAllSlides ) ) {
 			console.log("Slide4");
 
-			// Check if previous slide was the first slide (slider loops forth to the back of the slides)
-			// console.log(prevSlidePos);
+			// If the current slide is the last slide and the previous slide was the first slide, slider loops forth to the back of the slides.
+			// This only occurse when sliding to the left.
 			if ( prevSlidePos === 1 ) {
 				console.log("slider loops forth to the back of the slides");
+
 				// Set slides container offset to beforeFirstSlide position (slide 4)
 				_setTransformOffset( -beforeFirstSlideOffset, slidesContainer );
-				slidesContainer.data( "transitionStatus", "active" );
+				// Set delayForTransition to execute when transition is ended
+				slidesContainer.data( "delayForTransitionFirstToLast", true);
+
+				// If mouseup event occures before CSS3 transition end (e.g. fast scrolling),
+				// set transform offsets immediately.
+				if ( slidesContainer.data("transitionStatus") === "active" ) {
+					console.log("Mouse used in transition");
+					_setTransformOffsetFirstToLast( allSlides, numAllSlides, afterLastSlideOffset, slidesContainerOffset, slidesContainer, slideOffsetLast );
+					slidesContainer.data( "delayForTransitionFirstToLast", false);
+				}
 
 				// Check if Slides container CSS3 transition has ended
 				// slidesContainer.on("webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend",
@@ -318,6 +367,10 @@
 			this.prevSlidePos         = 0;
 			this.slideContainerOffset = -(_getSlideOffset( this.settings.startAtSlide, this.slideOffset ));
 
+			this.beforeFirstSlideOffset = _getSlideOffset( 0, this.slideOffset );
+			this.afterLastSlideOffset   = _getSlideOffset( (this.numAllSlides + 1), this.slideOffset );
+			this.slideOffsetLast        = _getSlideOffset( this.numAllSlides, this.slideOffset );
+
 			this.slidesContainer.data("transitionStatus", "idle");
 			/* Global variables */
 			var $document = $(document),
@@ -353,7 +406,7 @@
 
 			_initAllSlidesOffset( this.allSlides, this.numAllSlides, this.slideOffset );
 
-			_initSlideOffset( this.curSlidePos, this.prevSlidePos, this.allSlides, this.slidesContainer, this.numAllSlides, this.slideOffset );
+			_initSlideOffset( this.curSlidePos, this.prevSlidePos, this.allSlides, this.slidesContainer, this.numAllSlides, this.slideOffset, this.beforeFirstSlideOffset, this.afterLastSlideOffset, this.slideOffsetLast );
 
 			// // Set initial slides container offset
 			// _setSliderOffset( slidesContainer, 0 );
@@ -368,7 +421,6 @@
 
 				var mousePositionStartX = evMouseDown.pageX,
 				mouseDistanceX          = 0,
-				mousePositionCurX       = 0,
 				mouseDistancePerc       = 0,
 				curSlideMouseOffset     = that.curSlide.position(),
 				slidesContainerOffset   = 0,
@@ -479,6 +531,17 @@
 					// // Set slides container offset to first slide
 					// _setTransformOffset( slidesContainerOffset, slidesContainer );
 
+					// If the current slide is the first slide and the previous slide was the last slide, slider loops back to the beginning of the slides.
+					// This only occurs when sliding to the right.
+					if ( that.slidesContainer.data( "delayForTransitionLastToFirst" ) === true ) {
+						_setTransformOffsetLastToFirst( that.allSlides, that.numAllSlides, that.beforeFirstSlideOffset, that.slidesContainer.data("slidesContainerOffset"), that.slidesContainer );
+
+					// If the current slide is the last slide and the previous slide was the first slide, slider loops forth to the back of the slides.
+					// This only occurse when sliding to the left.
+					} else if ( that.slidesContainer.data( "delayForTransitionFirstToLast" ) === true ) {
+						_setTransformOffsetFirstToLast( that.allSlides, that.numAllSlides, that.afterLastSlideOffset, that.slidesContainer.data("slidesContainerOffset"), that.slidesContainer, that.slideOffsetLast );
+					}
+
 					// If transition ended reset slideTransition to idle
 					that.slidesContainer.data("transitionStatus", "idle");
 
@@ -527,7 +590,7 @@
 			this.prevSlidePos = this.curSlidePos;
 
 			// Set slideOffset based on next slide number
-			_initSlideOffset( this.nextSlidePos, this.prevSlidePos, this.allSlides, this.slidesContainer, this.numAllSlides, this.slideOffset );
+			_initSlideOffset( this.nextSlidePos, this.prevSlidePos, this.allSlides, this.slidesContainer, this.numAllSlides, this.slideOffset, this.beforeFirstSlideOffset, this.afterLastSlideOffset, this.slideOffsetLast );
 
 			// Update cur slide position
 			this.curSlidePos = this.nextSlidePos;
@@ -556,7 +619,7 @@
 			this.prevSlidePos = this.curSlidePos;
 
 			// Set slideOffset based on next slide number
-			_initSlideOffset( this.nextSlidePos, this.prevSlidePos, this.allSlides, this.slidesContainer, this.numAllSlides, this.slideOffset );
+			_initSlideOffset( this.nextSlidePos, this.prevSlidePos, this.allSlides, this.slidesContainer, this.numAllSlides, this.slideOffset, this.beforeFirstSlideOffset, this.afterLastSlideOffset, this.slideOffsetLast);
 
 			// Update cur slide position
 			this.curSlidePos = this.nextSlidePos;
