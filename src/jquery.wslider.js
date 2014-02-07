@@ -124,36 +124,37 @@ _prefixedEvent = function ( element, type, pfx, callback ) {
 	}
 },
 
-_setPrefixedCss = function ( element, type, pfx, callback ) {
-	var i, len;
+_setPrefixedCss = function ( elem, cssProperty, cssValue ) {
+	var i, len,
+	pfx = [ "webkit", "moz", "MS", "o", "" ];
 
 	for ( i = 0, len = pfx.length; i < len; i++ ) {
 		// If prefix is empty lowercase type
 		if ( !pfx[i] ) {
-			type = type.toLowerCase();
+			cssProperty = cssProperty.toLowerCase();
 		}
 		// Add for each prefixed type an eventListener
-		element.style.setProperty( pfx[i] + type, callback, false );
+		elem.style[ pfx[i] + cssProperty ] = cssValue;
+		// elem.style[ pfx[i] + cssProperty ] = cssValue;
 	}
 },
 
 // _setCssTransformMatrixTx
 _setTransformOffset = function ( offset, element ) {
 	var i, len,
-	pfx = [ "-webkit-", "-moz-", "-MS-", "-o-", "" ],
-	cssRule = "Transform";
-	// node.css({
-	// 	"webkitTransform": "matrix(1,0,0,1," + offset + ",0)",
-	// 	"MozTransform": "matrix(1,0,0,1," + offset + ",0)",
-	// 	"transform": "matrix(1,0,0,1," + offset + ",0)",
-	// });
+	pfx = [ "webkit", "moz", "MS", "o", "" ],
+	cssValue = "Transform";
+
+	// Iterate over each css prefix
 	for ( i = 0, len = pfx.length; i < len; i++ ) {
+
 		// If prefix is empty lowercase type
 		if ( !pfx[i] ) {
-			cssRule = cssRule.toLowerCase();
+			cssValue = cssValue.toLowerCase();
 		}
+
 		// Add for each prefix an css rule
-		element[0].style.setProperty( pfx[i] + cssRule, "matrix(1,0,0,1," + offset + ",0" );
+		element[0].style[ pfx[i] + cssValue] = "matrix(1,0,0,1," + offset + ",0)";
 	}
 },
 
@@ -161,7 +162,7 @@ _setTransformOffsetLastToFirst = function ( allSlides, numAllSlides, beforeFirst
 		slidesContainerOffset, slidesContainer ) {
 	console.log("To the beginning");
 	// Remove slides container CSS3 Transition
-	slidesContainer[0].style.removeProperty( "-webkit-transition" );
+	_setPrefixedCss( slidesContainer[0], "Transition", "");
 
 	// rearrange first slide from the back to the beginning of the slides.
 	_setTransformOffset( 0, $(allSlides[0]) );
@@ -181,8 +182,7 @@ _setTransformOffsetFirstToLast = function ( allSlides, numAllSlides, afterLastSl
 		slidesContainerOffset, slidesContainer, slideOffsetLast ) {
 	console.log("To the end");
 	// Remove slides container CSS3 Transition
-	// slidesContainer.css( "transition", "" );
-	slidesContainer[0].style.removeProperty( "-webkit-transition" );
+	_setPrefixedCss( slidesContainer[0], "Transition", "");
 
 	// Rearange last slide back to last position in slides
 	_setTransformOffset( slideOffsetLast, $(allSlides[ numAllSlides - 1 ]) );
@@ -206,10 +206,9 @@ _initAllSlidesOffset = function ( allSlides, numAllSlides, slideOffset ) {
 
 		_setTransformOffset( offset, $this );
 
-		$this.css({
-			"position": "absolute",
-			"cursor": "-webkit-grab"
-		});
+		// Set inline css styles
+		this.style.position = "absolute";
+		this.style.cursor = "-webkit-grab";
 
 		offset += slideOffset;
 	});
@@ -221,21 +220,6 @@ _initSlideOffset = function ( slidePos, prevSlidePos, allSlides, slidesContainer
 
 	// Set SlidesContainerOffset in data for use event function (when transition ends)
 	slidesContainer.data( "slidesContainerOffset", slidesContainerOffset );
-
-	// var beforeFirstSlideOffset = _getSlideOffset( 0, slideOffset ),
-	// afterLastSlideOffset       = _getSlideOffset( (numAllSlides + 1), slideOffset ),
-	// slideOffsetLast            = _getSlideOffset( numAllSlides, slideOffset ),
-	// slidesContainerOffset      = -(_getSlideOffset( slidePos, slideOffset ));
-
-	// If MouseUp event occures before CSS3 transition end (e.g. fast scrolling),
-	// set transform offsets immediately. If MouseUp event occures before CSS3 transition end
-	// (e.g. fast scrolling)
-	if ( slidesContainer.data("transitionStatus") === "active" ) {
-		// Set data to slideDirect
-		slidesContainer.data( "slideDirect", true);
-	} else {
-		slidesContainer.data( "slideDirect", false);
-	}
 
 	// Check if the slide is the first of slides
 	if ( _isFirstSlide( slidePos ) ) {
@@ -252,14 +236,6 @@ _initSlideOffset = function ( slidePos, prevSlidePos, allSlides, slidesContainer
 			// Set delayForTransition to execute when transition is ended
 			slidesContainer.data( "delayForTransitionLastToFirst", true);
 
-
-
-
-
-
-
-
-
 		// If no looping occurse
 		} else {
 			// rearrange last slide before first slide (beforeFirstSlide position).
@@ -269,7 +245,6 @@ _initSlideOffset = function ( slidePos, prevSlidePos, allSlides, slidesContainer
 			_setTransformOffset( slidesContainerOffset, slidesContainer );
 			slidesContainer.data("transitionStatus", "active");
 		}
-
 
 	// If slide is the second slide and first slide is positioned last, position first slide back
 	} else if ( slidePos === 2 ) {
@@ -306,11 +281,6 @@ _initSlideOffset = function ( slidePos, prevSlidePos, allSlides, slidesContainer
 			// Set delayForTransition to execute when transition is ended
 			slidesContainer.data( "delayForTransitionFirstToLast", true);
 
-
-
-
-
-
 		// If no looping occurse
 		} else {
 			// Rearange first slide after the last slide (afterLastSlide position)
@@ -327,7 +297,6 @@ _initSlideOffset = function ( slidePos, prevSlidePos, allSlides, slidesContainer
 		// of slide positions occur.
 		_setTransformOffset( slidesContainerOffset, slidesContainer );
 		slidesContainer.data( "transitionStatus", "active" );
-
 	}
 };
 
@@ -380,34 +349,7 @@ Plugin.prototype = {
 		var $document = $(document),
 		that          = this;
 
-		// slider               = this.element,
-		// slidesContainer      = slider.find("div.slides"),
-		// objAllSlides         = slider.find("div.slide"),
-		// numAllSlides         = objAllSlides.length,
-		// sliderWidth          = slider.width(),
-		// slidesContainerWidth = numAllSlides * sliderWidth,
-		// slideOffset          = sliderWidth,
-		// slideOffsetLast      = slideOffset * numAllSlides,
-		// hasCSSAnimation      = Modernizr.cssanimations,
-		// anchorEvents         = slider.find("a");
-
-		// // If current slide is at the beginning of slides, rearrange 4th slide
-		// // to the beginning.
-		// if ( curSlide <== 1 ) {
-		// 	_setSliderOffset( objAllSlides[ numAllSlides-1 ], 0 );
-
-		// // If current slide is at the end of slides, rearrange 1st slide
-		// // to the end.
-		// } else if ( curSlide === numAllSlides ) {
-		// 	_setSliderOffset( objAllSlides[0], slideOffsetLast );
-		// }
-
-		// Set CSS3 transition on the slides container
-		// this.slidesContainer.css({
-		// 	"width": this.slidesContainerWidth,
-		// 	"webkitTransition": "all 1s"
-		// });
-		this.slidesContainer[0].style.setProperty( "width", this.slidesContainerWidth );
+		this.slidesContainer[0].style.width = this.slidesContainerWidth;
 
 		_initAllSlidesOffset( this.allSlides, this.numAllSlides, this.slideOffset );
 
@@ -419,26 +361,28 @@ Plugin.prototype = {
 		// initiating the first slide.
 		this.slidesContainer.data("transitionStatus", "idle");
 
-		// // Set initial slides container offset
-		// _setSliderOffset( slidesContainer, 0 );
-
-		// // set each initial slide offset and css
-		// allSlides.each( function( index, node ) {
-
-		// 	_setSliderOffset( node, slideOffset);
-
 		// Add mouse handlers for horizontal scrolling through slides
-		this.slidesContainer[0].addEventListener( "mousedown", function () {
-			var mousePositionStartX = window.event.clientX,
-			mouseDistanceX          = 0,
-			mouseDistancePerc       = 0,
-			curCssTransformMatrix   = window.getComputedStyle(that.slidesContainer[0]).getPropertyValue("-webkit-transform"),
-			curCssTransformMatrixArray = [],
-			curCssTransformMatrixTx = 0,
-			slidesContainerOffset   = 0,
-			offsetBase              = 0;
+		this.slidesContainer[0].addEventListener( "mousedown", function (e) {
+			e = e || window.event;
 
-			// Get tx position of the current transform matrix pos
+			var mousePositionStartX    = e.clientX,
+			mouseDistanceX             = 0,
+			mouseDistancePerc          = 0,
+			curCssCompStyles           = window.getComputedStyle(that.slidesContainer[0], null),
+			curCssTransformMatrix      = "",
+			curCssTransformMatrixArray = [],
+			curCssTransformMatrixTx    = 0,
+			slidesContainerOffset      = 0,
+			offsetBase                 = 0;
+
+			// Get the computed CSS3 transform matrix value
+			curCssTransformMatrix   = curCssCompStyles.getPropertyValue("-webkit-transform") ||
+				curCssCompStyles.getPropertyValue("-moz-transform") ||
+				curCssCompStyles.getPropertyValue("-MS-transform") ||
+				curCssCompStyles.getPropertyValue("-o-transform") ||
+				curCssCompStyles.getPropertyValue("transform");
+
+			// Get the current transform matrix tx position
 			curCssTransformMatrixArray = curCssTransformMatrix.split("(")[1];
 			curCssTransformMatrixArray = curCssTransformMatrixArray.split(")")[0];
 			curCssTransformMatrixArray = curCssTransformMatrixArray.split(",");
@@ -453,14 +397,8 @@ Plugin.prototype = {
 				offsetBase = -(that.curSlideOffset);
 			}
 
-			// If mousedown event occures before CSS3 transition end (e.g. fast scrolling)
-			// if ( that.slidesContainer.data("transitionStatus") === "active" ) {
-			// 	console.log(that.curSlide);
-			// 	console.log(curSlideMouseOffset.left);
-			// }
-
 			// Remove CSS3 transition
-			that.slidesContainer[0].style.removeProperty( "-webkit-transition" );
+			_setPrefixedCss( that.slidesContainer[0], "Transition", "");
 
 			// If mouseup event occures before CSS3 transition end (e.g. fast scrolling) when
 			// looping delay has been set, set delayed transform offsets immediately.
@@ -490,7 +428,6 @@ Plugin.prototype = {
 
 				// Reset delayForTransitionFirstToLast to false
 				that.slidesContainer.data( "delayForTransitionFirstToLast", false);
-
 			}
 
 			// Take current slide offset as base for mouse movement
@@ -498,7 +435,6 @@ Plugin.prototype = {
 
 			// Set sliderOffset of slidescontainer to dragged distance
 			_setTransformOffset( slidesContainerOffset, that.slidesContainer );
-
 
 			$document.on( "mousemove.namespace1", function( evMouseMove ) {
 
@@ -513,32 +449,8 @@ Plugin.prototype = {
 
 			});
 			$document.on( "mouseup.namespace1", function () {
-
-				// // Check if Slides container CSS3 transition has ended
-				// that.slidesContainer.on("webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend",
-				// 	function() {
-				// 		// // Remove slides container CSS3 Transition
-				// 		// slidesContainer.css( "transition", "" );x
-
-				// 		// // rearrange first slide from the back to the beginning of the slides.
-				// 		// _setTransformOffset( 0, allSlides[0] );
-
-				// 		// // rearrange last slide before first slide (beforeFirstSlide position).
-				// 		// _setTransformOffset( beforeFirstSlideOffset, allSlides[ numAllSlides - 1 ] );
-
-				// 		// // Set slides container offset to first slide
-				// 		// _setTransformOffset( slidesContainerOffset, slidesContainer );
-
-				// 		that.slidesContainer.data("transitionStatus", "idle");
-				// 		console.log( that.slidesContainer.data("transitionStatus") );
-				// 		// Unbind CSS3 transition check handler
-				// 		that.slidesContainer.off();
-				// 	}
-				// );
-
 				// Add CSS transition
-				// that.slidesContainer.css( "webkitTransition", "all 1s" );
-				that.slidesContainer[0].style.setProperty( "-webkit-transition", "all 1s" );
+				_setPrefixedCss( that.slidesContainer[0], "Transition", "all 1s");
 
 				// Scroll to next, previous or current slide.
 				// If scroll is the same or more than given mouseSlidePercentage go to next slide or
@@ -565,35 +477,14 @@ Plugin.prototype = {
 					that.slidesContainer.data("transitionStatus", "idle");
 				}
 
-				// console.log("==========================");
-				// console.log("Current slide pos: " + that.curSlidePos);
-				// console.log("Current slide Offset: " + that.curSlideOffset);
-				// console.log("Next slide pos: " + that.nextSlidePos);
-				// console.log("Previous slide pos: " + that.prevSlidePos);
-				// console.log("Current Container Offset: " + that.slideContainerOffset);
-
-				// that.slidesContainer.data("transitionStatus", "active");
-
 				// Unbind mouse handlers
 				$document.off( ".namespace1" );
 			});
 		}, false );
 
 		// Check if Slides container CSS3 transition has ended
-		// function ( element, type, callback )
 		_prefixedEvent( this.slidesContainer[0], "TransitionEnd", this.settings.cssPrefixes,
 			function() {
-				// // Remove slides container CSS3 Transition
-				// slidesContainer.css( "transition", "" );
-
-				// // rearrange first slide from the back to the beginning of the slides.
-				// _setTransformOffset( 0, allSlides[0] );
-
-				// // rearrange last slide before first slide (beforeFirstSlide position).
-				// _setTransformOffset( beforeFirstSlideOffset, allSlides[ numAllSlides - 1 ] );
-
-				// // Set slides container offset to first slide
-				// _setTransformOffset( slidesContainerOffset, slidesContainer );
 
 				// If the current slide is the first slide and the previous slide was the last slide,
 				// slider loops back to the beginning of the slides.
@@ -620,16 +511,6 @@ Plugin.prototype = {
 				// that.slidesContainer.off();
 			}
 		);
-
-		// Place initialization logic here
-		// You already have access to the DOM element and
-		// the options via the instance, e.g. this.element
-		// and this.settings
-		// you can add more functions like the one below and
-		// call them like so: this.yourOtherFunction(this.element, this.settings).
-
-		// creating new DOM elements, registering listeners, etc
-
 	},
 
 	// Updates/reinitializes internal variables/CSS attributes based
