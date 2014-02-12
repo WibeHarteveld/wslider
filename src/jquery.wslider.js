@@ -1,4 +1,5 @@
 ;(function ( $, window, document, undefined ) {
+"use strict";
 
 /* global variables */
 var pluginName = "wSlider",
@@ -305,7 +306,7 @@ function Plugin( element ) {
 	this.element   = element;
 	this._defaults = defaults;
 	this._name     = pluginName;
-	}
+}
 
 Plugin.prototype = {
 
@@ -362,10 +363,12 @@ Plugin.prototype = {
 		this.slidesContainer.data("transitionStatus", "idle");
 
 		// Add mouse handlers for horizontal scrolling through slides
-		this.slidesContainer[0].addEventListener( "mousedown", function (e) {
-			e = e || window.event;
+		// function mouseDownEventHandler( event ) {
 
-			var mousePositionStartX    = e.clientX,
+		// }
+		this.slidesContainer[0].addEventListener( "mousedown", function (event) {
+
+			var mousePositionStartX    = event.clientX,
 			mouseDistanceX             = 0,
 			mouseDistancePerc          = 0,
 			curCssCompStyles           = window.getComputedStyle(that.slidesContainer[0], null),
@@ -648,8 +651,7 @@ Plugin.prototype = {
  */
 $.fn[ pluginName ] = function ( arg ) {
 
-	var args,
-	    instance;
+	var args, instance;
 
 	// only allow the plugin to be instantiated once
 	if ( !( this.data( dataPlugin ) instanceof Plugin ) ) {
