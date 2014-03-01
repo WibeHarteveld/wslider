@@ -11,51 +11,24 @@ defaults = {
 	domPrefixes: [ "webkit", "moz", "MS", "o", "" ],
 	mouseSlidePercentage: 35,
 	elasticPullResistance: 0.6,
-	frictionCoefficient: 0.92,
-	elasticFrictionCoefficient: 0.6,
-	snapFrictionCoefficient: 0.92,
-	snapToChildren: false,
-	snapSlideCenter: false,
 	startAtSlide: 1,
 	scrollbar: false,
-	scrollbarDrag: false,
-	scrollbarHide: true,
 	scrollbarLocation: "top",
 	scrollbarContainer: "",
-	scrollbarOpacity: 0.4,
-	scrollbarHeight: "4px",
-	scrollbarBorder: "0",
-	scrollbarMargin: "5px",
-	scrollbarBackground: "#000",
-	scrollbarBorderRadius: "100px",
-	scrollbarShadow: "0 0 0 #000",
-	scrollbarElasticPullResistance: 0.9,
 	desktopClickDrag: false,
 	keyboardControls: false,
 	tabToAdvance: false,
 	responsiveSlideContainer: true,
 	responsiveSlides: true,
-	navSlideSelector: "",
-	navPrevSelector: "",
-	navNextSelector: "",
+	goToSlideSelector: "",
+	slideRightSelector: "",
+	slideleftSelector: "",
 	autoSlide: false,
-	autoSlideTimer: 5000,
+	autoSlideTimer: 8000,
 	autoSlideTransTimer: 750,
 	autoSlideToggleSelector: "",
 	autoSlideHoverPause: true,
 	infiniteSlider: false,
-	snapVelocityThreshold: 5,
-	slideStartVelocityThreshold: 0,
-	horizontalSlideLockThreshold: 5,
-	verticalSlideLockThreshold: 3,
-	stageCSS: {
-		position: "relative",
-		top: "0",
-		left: "0",
-		overflow: "hidden",
-		zIndex: 1
-	},
-	unselectableSelector: "",
 
 	/* Callback functions */
 	onSliderLoaded: function() {},
@@ -89,29 +62,6 @@ Plugin.prototype = {
 			this.settings.startAtSlide = this.defaults.startAtSlide;
 		}
 
-		// var slidesContainer  = this.element.find("div.slides"),
-		// allSlides            = this.element.find("div.slide"),
-		// numAllSlides         = allSlides.length,
-		// sliderWidth          = this.element.width(),
-		// slidesContainerWidth = numAllSlides * sliderWidth,
-		// slideOffset          = sliderWidth,
-		// hasCSSAnimation      = Modernizr.cssanimations,
-		// anchorEvents         = this.element.find("a"),
-		// curSlidePos          = this.settings.startAtSlide,
-		// curSlide             = $(allSlides[curSlidePos-1]),
-		// curSlideOffset       = this._getSlideOffset( this.settings.startAtSlide, slideOffset ),
-		// nextSlidePos         = 0,
-		// nextSlideOffset      = 0,
-		// prevSlidePos         = 0,
-		// prevSlideOffset      = 0,
-		// slidesContainerOffset = -(this._getSlideOffset( this.settings.startAtSlide, slideOffset )),
-
-		// beforeFirstSlideOffset = this._getSlideOffset( 0, slideOffset ),
-		// afterLastSlideOffset   = this._getSlideOffset( (numAllSlides + 1), slideOffset ),
-		// slideOffsetLast        = this._getSlideOffset( numAllSlides, slideOffset );
-
-		// slidesContainer.data("transitionStatus", "idle");
-
 		this.slidesContainer        = this.element.find("div.slides");
 		this.allSlides              = this.element.find("div.slide");
 		this.numAllSlides           = this.allSlides.length;
@@ -127,7 +77,7 @@ Plugin.prototype = {
 		this.nextSlideOffset        = 0;
 		this.prevSlidePos           = 0;
 		this.prevSlideOffset        = 0;
-		this.slidesContainerOffset   = -( this._getSlideOffset( this.settings.startAtSlide ) );
+		this.slidesContainerOffset  = -( this._getSlideOffset( this.settings.startAtSlide ) );
 
 		this.beforeFirstSlideOffset = this._getSlideOffset( "first", -1 );
 		this.afterLastSlideOffset   = this._getSlideOffset( "last", 1 );
